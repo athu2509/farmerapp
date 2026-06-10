@@ -1,0 +1,31 @@
+<div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f4f8">
+  <mat-card style="width:420px; padding:32px; border-radius:12px">
+    <mat-card-header style="margin-bottom:24px">
+      <mat-card-title style="font-size:24px">FarmerApp</mat-card-title>
+      <mat-card-subtitle>Sign in to your account</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <formly-form [form]="form" [fields]="fields" [model]="model"></formly-form>
+
+        <div
+          *ngIf="errorMessage"
+          style="color:#c62828; background:#ffebee; border:1px solid #ef9a9a; padding:10px 14px; border-radius:6px; margin-top:12px; font-size:14px"
+        >
+          {{ errorMessage }}
+        </div>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="loading"
+          style="width:100%; margin-top:20px; height:44px"
+        >
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

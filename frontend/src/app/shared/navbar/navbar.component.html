@@ -1,0 +1,22 @@
+<mat-toolbar color="primary">
+  <span style="font-weight:600; font-size:18px">FarmerApp</span>
+
+  <span style="flex:1"></span>
+
+  <button mat-button routerLink="/dashboard" routerLinkActive="active-link">Dashboard</button>
+  <button mat-button routerLink="/farmers" routerLinkActive="active-link">Farmers</button>
+  <button mat-button routerLink="/all-farms" routerLinkActive="active-link">Farms</button>
+  <button mat-button routerLink="/all-schedules" routerLinkActive="active-link">Schedules</button>
+
+  <ng-container *ngIf="auth.isAdmin()">
+    <button mat-button routerLink="/users" routerLinkActive="active-link">Users</button>
+  </ng-container>
+
+  <span style="margin-left:16px; opacity:0.8; font-size:13px">
+    {{ auth.getCurrentUser()?.name }}
+  </span>
+
+  <button mat-icon-button (click)="auth.logout()" style="margin-left:8px" title="Logout">
+    <mat-icon>logout</mat-icon>
+  </button>
+</mat-toolbar>

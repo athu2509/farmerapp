@@ -1,0 +1,50 @@
+<h2 style="margin:0 0 20px">All Schedules</h2>
+
+<mat-card>
+  <table mat-table [dataSource]="dataSource" style="width:100%">
+    <ng-container matColumnDef="task_name">
+      <th mat-header-cell *matHeaderCellDef>Task</th>
+      <td mat-cell *matCellDef="let row">{{ row.task_name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="fertilizer">
+      <th mat-header-cell *matHeaderCellDef>Fertilizer</th>
+      <td mat-cell *matCellDef="let row">{{ row.fertilizer }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="quantity">
+      <th mat-header-cell *matHeaderCellDef>Quantity</th>
+      <td mat-cell *matCellDef="let row">{{ row.quantity }} {{ row.quantity_unit }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="due_date">
+      <th mat-header-cell *matHeaderCellDef>Due Date</th>
+      <td mat-cell *matCellDef="let row">{{ row.due_date }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let row">
+        <span [style.color]="row.status === 'completed' ? '#388e3c' : '#f57c00'">
+          {{ row.status }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Actions</th>
+      <td mat-cell *matCellDef="let row">
+        <button mat-icon-button [routerLink]="['/farms', row.farm_id, 'schedules']" title="View Farm Schedules">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <p *ngIf="dataSource.data.length === 0" style="text-align:center; padding:32px; color:#999">
+    No schedules found.
+  </p>
+</mat-card>

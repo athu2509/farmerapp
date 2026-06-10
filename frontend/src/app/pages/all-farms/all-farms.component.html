@@ -1,0 +1,49 @@
+<h2 style="margin:0 0 20px">All Farms</h2>
+
+<mat-card>
+  <table mat-table [dataSource]="dataSource" style="width:100%">
+    <ng-container matColumnDef="farmer">
+      <th mat-header-cell *matHeaderCellDef>Farmer</th>
+      <td mat-cell *matCellDef="let row">{{ farmerName(row.farmer_id) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="village">
+      <th mat-header-cell *matHeaderCellDef>Village</th>
+      <td mat-cell *matCellDef="let row">{{ row.village }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="crop_name">
+      <th mat-header-cell *matHeaderCellDef>Crop</th>
+      <td mat-cell *matCellDef="let row">{{ row.crop_name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="area">
+      <th mat-header-cell *matHeaderCellDef>Area</th>
+      <td mat-cell *matCellDef="let row">{{ row.area }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="sowing_date">
+      <th mat-header-cell *matHeaderCellDef>Sowing Date</th>
+      <td mat-cell *matCellDef="let row">{{ row.sowing_date }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Actions</th>
+      <td mat-cell *matCellDef="let row">
+        <button mat-icon-button [routerLink]="['/farms', row.id, 'schedules']" title="Schedules">
+          <mat-icon>calendar_month</mat-icon>
+        </button>
+        <button mat-icon-button [routerLink]="['/farmers', row.farmer_id, 'farms']" title="Farmer Farms">
+          <mat-icon>yard</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <p *ngIf="dataSource.data.length === 0" style="text-align:center; padding:32px; color:#999">
+    No farms found.
+  </p>
+</mat-card>
