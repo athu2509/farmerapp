@@ -28,7 +28,8 @@ import { FarmService } from '../../core/services/farm.service';
     MatSnackBarModule,
     FormlyModule
   ],
-  templateUrl: './dashboard.component.html'
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
   user: any = null;
@@ -37,6 +38,7 @@ export class DashboardComponent implements OnInit {
   farmerCount = 0;
   farmCount = 0;
   scheduleCount = 0;
+  today = new Date();
   bomForm = new FormGroup({});
   bomModel: any = { farmer_id: '' };
   bomFields: FormlyFieldConfig[] = [];
