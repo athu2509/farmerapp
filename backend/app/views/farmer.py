@@ -248,7 +248,6 @@ async def get_bill_of_materials(
 
 
 @farmer_view.post("/farmers/{farmer_id}/overall-bill")
-@require_roles(["ADMIN", "SUPER_USER"])
 async def get_overall_bill(
     farmer_id: str,
     request: Request,

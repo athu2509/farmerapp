@@ -84,20 +84,7 @@ export class UsersComponent implements OnInit {
     return user.roles.includes('ADMIN') ? 'ADMIN' : 'USER';
   }
 
-  onRoleChange(user: any, role: string): void {
-    if (this.getUserRole(user) === role) return;
-    this.userService.setRole(user.id, role).subscribe({
-      next: () => { this.snackBar.open('Role updated', 'Close', { duration: 3000 }); this.loadUsers(); },
-      error: (err: any) => { this.snackBar.open(err.error?.message ?? 'Error', 'Close', { duration: 4000 }); this.loadUsers(); }
-    });
-  }
-
-  makeAdmin(user: any): void {
-    this.userService.setRole(user.id, 'ADMIN').subscribe({
-      next: () => { this.snackBar.open('User promoted to admin', 'Close', { duration: 3000 }); this.loadUsers(); },
-      error: (err: any) => this.snackBar.open(err.error?.message ?? 'Error', 'Close', { duration: 4000 })
-    });
-  }
+  
 
   delete(user: any): void {
     if (!confirm(`Delete user "${user.name}"?`)) return;
@@ -111,4 +98,54 @@ export class UsersComponent implements OnInit {
   isAdmin(): boolean { return this.auth.isAdmin(); }
   canManageRole(user: any): boolean { return !user.roles.includes('SUPER_USER') && (this.isSuperUser() || this.isAdmin()); }
   canDeleteUser(user: any): boolean { return !user.roles.includes('SUPER_USER'); }
+
+  toggleAdminAccess(user: any): void {
+  let newRole = 'ADMIN';
+
+  // Superuser can both grant and revoke
+  if (this.isSuperUser()) {
+    newRole = this.getUserRole(user) === 'ADMIN'
+      ? 'USER'
+      : 'ADMIN';
+  }
+
+  // Admins can only grant admin access
+  if (this.isAdmin() && !this.isSuperUser()) {
+    newRole = 'ADMIN';
+  }
+
+  this.userService.setRole(user.id, newRole).subscribe({
+    next: () => {
+      this.snackBar.open(
+        newRole === 'ADMIN'
+          ? 'Admin access granted'
+          : 'Admin access revoked',
+        'Close',
+        { duration: 3000 }
+      );
+      this.loadUsers();
+    },
+    error: (err: any) => {
+      this.snackBar.open(
+        err.error?.message ?? 'Error',
+        'Close',
+        { duration: 4000 }
+      );
+    }
+  });
+  }
+
+  showAdminButton(user: any): boolean {
+  if (!this.canManageRole(user)) {
+    return false;
+  }
+
+  // Superuser sees button for all non-superusers
+  if (this.isSuperUser()) {
+    return true;
+  }
+
+  // Admins only see button for USERs
+  return this.isAdmin() && this.getUserRole(user) === 'USER';
+}
 }

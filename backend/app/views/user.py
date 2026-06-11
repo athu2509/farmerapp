@@ -295,6 +295,8 @@ async def set_user_role(
     token = authorization.replace("Bearer ", "")
     payload = decode_access_token(token)
     requester_roles = payload.get("roles", [])
+    print("REQUESTER ROLES:", requester_roles)  
+    print("TARGET ROLE:", body.get("role"))
 
     user = user_service.set_user_role(
         db,
