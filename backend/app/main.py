@@ -15,15 +15,20 @@ from app.views.farm import farm_view
 from app.views.schedule import schedule_view
 from app.views.user import user_view
 
-from seed import seed_users
+from seed import seed_users,seed_farms ,seed_schedules, seed_farmers
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    seed_users()
-    yield
 
+    seed_users()
+
+    farmers = seed_farmers()
+    farms = seed_farms(farmers)
+    seed_schedules(farms)
+
+    yield
 
 app = FastAPI(
     title="Farmer Management API",
