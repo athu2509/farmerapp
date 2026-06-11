@@ -47,7 +47,8 @@ export class AuthService {
   }
 
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    const raw = localStorage.getItem(this.USER_KEY);  // ✅ reads correct key
+    return raw ? JSON.parse(raw) : null;
   }
 
   hasRole(role: string): boolean {
@@ -56,11 +57,13 @@ export class AuthService {
   }
 
   isAdmin(): boolean {
-    return this.hasRole('ADMIN') || this.hasRole('SUPER_USER');
+    const user = this.getCurrentUser();
+    return user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_USER') || false;
   }
 
   isSuperUser(): boolean {
-    return this.hasRole('SUPER_USER');
+    const user = this.getCurrentUser();
+    return user?.roles?.includes('SUPER_USER') || false;
   }
 
   private loadUser(): User | null {

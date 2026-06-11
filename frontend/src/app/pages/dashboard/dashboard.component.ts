@@ -1,13 +1,13 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { FormlyFieldConfig, FormlyModule } from '@ngx-formly/core';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ScheduleService } from '../../core/services/schedule.service';
@@ -20,13 +20,13 @@ import { FarmService } from '../../core/services/farm.service';
   imports: [
     CommonModule,
     RouterModule,
-    ReactiveFormsModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
-    MatSnackBarModule,
-    FormlyModule
+    MatSelectModule,
+    MatSnackBarModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -39,13 +39,13 @@ export class DashboardComponent implements OnInit {
   farmCount = 0;
   scheduleCount = 0;
   today = new Date();
-  bomForm = new FormGroup({});
-  bomModel: any = { farmer_id: '' };
-  bomFields: FormlyFieldConfig[] = [];
-  bomItems: any[] = [];
+  farmers: any[] = [];
+
+  // BOM
+  selectedFarmerId = '';
+  bomRows: { fertilizer: string; quantity: number; unit: string; unitPrice: number }[] = [];
   totalBill = 0;
   bomLoading = false;
-  farmers: any[] = [];
 
   constructor(
     public auth: AuthService,
@@ -53,7 +53,7 @@ export class DashboardComponent implements OnInit {
     private farmerService: FarmerService,
     private farmService: FarmService,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef  // ✅ added
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -62,14 +62,14 @@ export class DashboardComponent implements OnInit {
     this.scheduleService.getDueToday().subscribe({
       next: (res: any) => {
         this.dueToday = res.data ?? [];
-        this.cdr.detectChanges();  // ✅
+        this.cdr.detectChanges();
       }
     });
 
     this.scheduleService.getDueTomorrow().subscribe({
       next: (res: any) => {
         this.dueTomorrow = res.data ?? [];
-        this.cdr.detectChanges();  // ✅
+        this.cdr.detectChanges();
       }
     });
 
@@ -77,51 +77,39 @@ export class DashboardComponent implements OnInit {
       next: (res: any) => {
         this.farmerCount = res.data?.length ?? 0;
         this.farmers = res.data ?? [];
-        this.setupBomFields();
-        this.cdr.detectChanges();  // ✅
+        this.cdr.detectChanges();
       }
     });
 
     this.farmService.getAll().subscribe({
       next: (res: any) => {
         this.farmCount = res.data?.length ?? 0;
-        this.cdr.detectChanges();  // ✅
+        this.cdr.detectChanges();
       }
     });
 
     this.scheduleService.getAll().subscribe({
       next: (res: any) => {
         this.scheduleCount = res.data?.length ?? 0;
-        this.cdr.detectChanges();  // ✅
+        this.cdr.detectChanges();
       }
     });
   }
 
-  // ... rest of your methods remain unchanged
-  setupBomFields(): void {
-    this.bomFields = [
-      {
-        key: 'farmer_id',
-        type: 'select',
-        props: {
-          label: 'Farmer',
-          required: true,
-          options: this.farmers.map(f => ({ value: f.id, label: f.name })),
-          change: () => this.onFarmerChange()
-        }
-      }
-    ];
-  }
-
-  onFarmerChange(): void {
-    const farmerId = this.bomModel.farmer_id;
+  onFarmerSelect(farmerId: string): void {
+    this.selectedFarmerId = farmerId;
+    this.bomRows = [];
+    this.totalBill = 0;
     if (!farmerId) return;
+
+    this.bomLoading = true;
 
     this.farmService.getByFarmer(farmerId).subscribe({
       next: (res: any) => {
         const farms = res.data ?? [];
         if (farms.length === 0) {
-          this.updatePriceFields([]);
+          this.bomLoading = false;
+          this.cdr.detectChanges();
           return;
         }
 
@@ -131,83 +119,60 @@ export class DashboardComponent implements OnInit {
 
         forkJoin(requests).subscribe({
           next: (results: any) => {
-            const resultList = results as any[];
-            const fertilizers = new Set<string>();
-            for (const result of resultList) {
-              for (const schedule of result.data ?? []) {
-                if (schedule.fertilizer) {
-                  fertilizers.add(schedule.fertilizer);
+            const fertMap: Record<string, { quantity: number; unit: string }> = {};
+
+            for (const result of results as any[]) {
+              for (const s of result.data ?? []) {
+                if (!s.fertilizer) continue;
+                const qty = this.convertQuantity(s.quantity, s.quantity_unit);
+                const unit = s.quantity_unit === 'g' ? 'kg'
+                           : s.quantity_unit === 'mL' ? 'L'
+                           : s.quantity_unit;
+                if (fertMap[s.fertilizer]) {
+                  fertMap[s.fertilizer].quantity += qty;
+                } else {
+                  fertMap[s.fertilizer] = { quantity: qty, unit };
                 }
               }
             }
-            this.updatePriceFields([...fertilizers]);
+
+            this.bomRows = Object.entries(fertMap).map(([fertilizer, data]) => ({
+              fertilizer,
+              quantity: Math.round(data.quantity * 100) / 100,
+              unit: data.unit,
+              unitPrice: 0
+            }));
+
+            this.bomLoading = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.bomLoading = false;
+            this.cdr.detectChanges();
           }
         });
+      },
+      error: () => {
+        this.bomLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
-  updatePriceFields(fertilizers: string[]): void {
-    const priceFields: FormlyFieldConfig[] = fertilizers.map(name => ({
-      key: `price_${name}`,
-      type: 'input',
-      props: {
-        label: `${name} Unit Price`,
-        type: 'number',
-        required: true,
-        min: 0
-      }
-    }));
+  convertQuantity(quantity: number, unit: string): number {
+    if (unit === 'g') return quantity / 1000;
+    if (unit === 'mL') return quantity / 1000;
+    return quantity;
+  }
 
-    this.bomFields = [
-      {
-        key: 'farmer_id',
-        type: 'select',
-        props: {
-          label: 'Farmer',
-          required: true,
-          options: this.farmers.map(f => ({ value: f.id, label: f.name })),
-          change: () => this.onFarmerChange()
-        }
-      },
-      ...priceFields
-    ];
+  recalculate(): void {
+    this.totalBill = this.bomRows.reduce((sum, row) => {
+      return sum + (row.quantity * (row.unitPrice || 0));
+    }, 0);
   }
 
   generateBom(): void {
-    if (!this.bomModel.farmer_id) {
-      this.snackBar.open('Select a farmer', 'Close', { duration: 3000 });
-      return;
-    }
-
-    const fertilizerPrices: Record<string, number> = {};
-    for (const key of Object.keys(this.bomModel)) {
-      if (key.startsWith('price_') && this.bomModel[key] != null && this.bomModel[key] !== '') {
-        const name = key.replace('price_', '');
-        fertilizerPrices[name] = Number(this.bomModel[key]);
-      }
-    }
-
-    if (Object.keys(fertilizerPrices).length === 0) {
-      this.snackBar.open('Enter fertilizer prices', 'Close', { duration: 3000 });
-      return;
-    }
-
-    this.bomLoading = true;
-
-    this.farmerService.getOverallBill(this.bomModel.farmer_id, {
-      fertilizer_prices: fertilizerPrices
-    }).subscribe({
-      next: (res: any) => {
-        this.bomItems = res.data?.bill_items ?? [];
-        this.totalBill = res.data?.total_bill ?? 0;
-        this.bomLoading = false;
-        this.cdr.detectChanges();  // ✅
-      },
-      error: (err: any) => {
-        this.snackBar.open(err.error?.message ?? 'Error generating BOM', 'Close', { duration: 4000 });
-        this.bomLoading = false;
-      }
-    });
+    this.recalculate();
+    this.snackBar.open('BOM calculated', 'Close', { duration: 2000 });
   }
 }

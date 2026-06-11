@@ -51,7 +51,7 @@ async def create_user(
     if existing:
         return error_response("Email already in use", status_code=409)
 
-    roles = body.get("roles", ["USER"])
+    roles = ["USER"]
 
     if "SUPER_USER" in roles:
         existing_super = user_service.get_super_user(db)

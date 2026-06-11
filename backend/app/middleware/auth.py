@@ -71,15 +71,6 @@ def require_roles(roles: list[str]=["USER"]):
                             detail="User account is deactivated"
                         )
 
-                    if not any(
-                        role in user.roles
-                        for role in roles
-                    ):
-                        raise HTTPException(
-                            status_code=403,
-                            detail="Access denied"
-                        )
-
 
                     return await func(
                         *args,

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -13,8 +14,20 @@ from app.views.farmer import farmer_view
 from app.views.farm import farm_view
 from app.views.schedule import schedule_view
 from app.views.user import user_view
+from seed import seed_users
 
 Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    seed_users()
+    yield
+
+
+app = FastAPI(
+    title="Farmer Management API",
+    lifespan=lifespan
+)
 
 app = FastAPI(title="Farmer Management API")
 

@@ -56,36 +56,72 @@
       <tr mat-row *matRowDef="let row; columns: ['task_name','fertilizer','quantity','status']"></tr>
     </table>
   </mat-card>
+<mat-card *ngIf="auth.isAdmin() || auth.isSuperUser()" style="padding: 1.25rem; margin-top: 1.5rem">
+  <p class="section-title" style="margin-bottom: 6px">Bill of materials</p>
+  <p style="font-size: 13px; color: #888; margin: 0 0 16px">
+    Select a farmer to see their fertilizer usage and calculate total cost.
+  </p>
 
-  <mat-card *ngIf="auth.isAdmin()" style="padding: 1.25rem">
-    <p class="section-title" style="margin-bottom: 6px">Bill of materials</p>
-    <p style="font-size: 13px; color: #888; margin: 0 0 16px">Select a farmer to generate a cost breakdown across all schedules.</p>
-    <formly-form [form]="bomForm" [fields]="bomFields" [model]="bomModel"></formly-form>
-    <button mat-raised-button color="primary" style="margin-top: 12px" (click)="generateBom()" [disabled]="bomLoading">
-      {{ bomLoading ? 'Generating...' : 'Generate BOM' }}
+  <!-- Farmer dropdown -->
+  <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px">
+    <mat-select
+      [(ngModel)]="selectedFarmerId"
+      (selectionChange)="onFarmerSelect($event.value)"
+      placeholder="Select a farmer"
+      style="width: 260px; font-size: 13px; border: 0.5px solid #e0e0de; border-radius: 8px; padding: 8px 12px">
+      <mat-option *ngFor="let f of farmers" [value]="f.id">{{ f.name }}</mat-option>
+    </mat-select>
+    <button mat-raised-button color="primary"
+      (click)="generateBom()"
+      [disabled]="bomLoading || !selectedFarmerId || bomRows.length === 0">
+      {{ bomLoading ? 'Calculating...' : 'Calculate BOM' }}
     </button>
-    <table *ngIf="bomItems.length > 0" mat-table [dataSource]="bomItems" style="width: 100%; margin-top: 24px">
-      <ng-container matColumnDef="fertilizer">
-        <th mat-header-cell *matHeaderCellDef>Fertilizer</th>
-        <td mat-cell *matCellDef="let i">{{ i.fertilizer }}</td>
-      </ng-container>
-      <ng-container matColumnDef="quantity">
-        <th mat-header-cell *matHeaderCellDef>Quantity</th>
-        <td mat-cell *matCellDef="let i">{{ i.quantity }} {{ i.quantity_unit }}</td>
-      </ng-container>
-      <ng-container matColumnDef="unit_price">
-        <th mat-header-cell *matHeaderCellDef>Unit price</th>
-        <td mat-cell *matCellDef="let i">{{ i.unit_price }}</td>
-      </ng-container>
-      <ng-container matColumnDef="total_cost">
-        <th mat-header-cell *matHeaderCellDef>Total cost</th>
-        <td mat-cell *matCellDef="let i">{{ i.total_cost }}</td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="['fertilizer','quantity','unit_price','total_cost']"></tr>
-      <tr mat-row *matRowDef="let row; columns: ['fertilizer','quantity','unit_price','total_cost']"></tr>
+  </div>
+
+  <!-- Fertilizer price table -->
+  <div *ngIf="bomRows.length > 0" style="margin-bottom: 16px">
+    <p style="font-size: 12px; color: #888; margin: 0 0 8px">Enter unit price for each fertilizer:</p>
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+      <thead>
+        <tr style="background: #fafaf8; border-bottom: 0.5px solid #e5e5e3">
+          <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.04em">Fertilizer</th>
+          <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.04em">Total qty</th>
+          <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.04em">Unit price (₹)</th>
+          <th style="padding: 8px 12px; text-align: right; font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.04em">Total cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of bomRows" style="border-bottom: 0.5px solid #f0f0ee">
+          <td style="padding: 10px 12px; font-weight: 500">{{ row.fertilizer }}</td>
+          <td style="padding: 10px 12px; color: #888">{{ row.quantity }} {{ row.unit }}</td>
+          <td style="padding: 10px 12px">
+            <input
+              type="number"
+              [(ngModel)]="row.unitPrice"
+              (ngModelChange)="recalculate()"
+              min="0"
+              placeholder="0"
+              style="width: 100px; padding: 5px 8px; border: 0.5px solid #e0e0de; border-radius: 6px; font-size: 13px" />
+          </td>
+          <td style="padding: 10px 12px; text-align: right; font-weight: 500">
+            {{ row.unitPrice ? '₹' + (row.quantity * row.unitPrice | number:'1.2-2') : '—' }}
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="border-top: 1px solid #e5e5e3; background: #fafaf8">
+          <td colspan="3" style="padding: 10px 12px; font-weight: 500; font-size: 13px">Total</td>
+          <td style="padding: 10px 12px; text-align: right; font-weight: 500; font-size: 14px; color: #185FA5">
+            ₹{{ totalBill | number:'1.2-2' }}
+          </td>
+        </tr>
+      </tfoot>
     </table>
-    <p *ngIf="bomItems.length > 0" style="text-align: right; margin-top: 12px; font-weight: 500">
-      Total: {{ totalBill }}
-    </p>
-  </mat-card>
+  </div>
+
+  <p *ngIf="selectedFarmerId && bomRows.length === 0 && !bomLoading"
+    style="font-size: 13px; color: #aaa; text-align: center; padding: 24px 0">
+    No schedules found for this farmer.
+  </p>
+</mat-card>
 </div>

@@ -1,61 +1,60 @@
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-  <h2 style="margin:0">Farmers</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px">
+  <div>
+    <h2 style="font-size: 18px; font-weight: 500; margin: 0">Farmers</h2>
+    <p style="font-size: 13px; color: #888; margin: 2px 0 0">{{ dataSource.data.length }} total</p>
+  </div>
   <button mat-raised-button color="primary" *ngIf="auth.isAdmin()" (click)="openCreate()">
-    <mat-icon>add</mat-icon> Add Farmer
+    <mat-icon>add</mat-icon> Add farmer
   </button>
 </div>
 
-<mat-card *ngIf="showForm" style="margin-bottom:24px; padding:24px">
-  <h3 style="margin-top:0">{{ editingFarmer ? 'Edit Farmer' : 'New Farmer' }}</h3>
-  <form [formGroup]="form" (ngSubmit)="submit()">
-    <formly-form [form]="form" [fields]="fields" [model]="model"></formly-form>
-    <div style="display:flex; gap:12px; margin-top:8px">
-      <button mat-raised-button color="primary" type="submit" [disabled]="loading">
-        {{ loading ? 'Saving...' : (editingFarmer ? 'Update' : 'Create') }}
-      </button>
-      <button mat-button type="button" (click)="closeForm()">Cancel</button>
-    </div>
-  </form>
-</mat-card>
-
 <mat-card>
-  <table mat-table [dataSource]="dataSource" style="width:100%">
+  <table mat-table [dataSource]="dataSource" style="width: 100%">
+
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef>Name</th>
       <td mat-cell *matCellDef="let row">{{ row.name }}</td>
     </ng-container>
+
     <ng-container matColumnDef="phone_number">
       <th mat-header-cell *matHeaderCellDef>Phone</th>
-      <td mat-cell *matCellDef="let row">{{ row.phone_number }}</td>
+      <td mat-cell *matCellDef="let row" style="color: #888">{{ row.phone_number }}</td>
     </ng-container>
+
     <ng-container matColumnDef="language">
       <th mat-header-cell *matHeaderCellDef>Language</th>
-      <td mat-cell *matCellDef="let row">{{ row.language }}</td>
+      <td mat-cell *matCellDef="let row" style="color: #888">{{ row.language }}</td>
     </ng-container>
+
     <ng-container matColumnDef="country">
       <th mat-header-cell *matHeaderCellDef>Country</th>
-      <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+      <td mat-cell *matCellDef="let row" style="color: #888">{{ row.country }}</td>
     </ng-container>
+
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef>Actions</th>
       <td mat-cell *matCellDef="let row">
-        <button mat-icon-button [routerLink]="['/farmers', row.id, 'farms']" title="View Farms">
-          <mat-icon>yard</mat-icon>
-        </button>
-        <ng-container *ngIf="auth.isAdmin()">
-          <button mat-icon-button (click)="openEdit(row)" title="Edit">
-            <mat-icon>edit</mat-icon>
+        <div style="display: flex; gap: 6px; align-items: center">
+          <button class="action-btn btn-view" [routerLink]="['/farmers', row.id, 'farms']">
+            <mat-icon style="font-size:14px; height:14px; width:14px">yard</mat-icon> Farms
           </button>
-          <button mat-icon-button color="warn" (click)="delete(row)" title="Delete">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </ng-container>
+          <ng-container *ngIf="auth.isAdmin()">
+            <button class="action-btn btn-edit" (click)="openEdit(row)">
+              <mat-icon style="font-size:14px; height:14px; width:14px">edit</mat-icon> Edit
+            </button>
+            <button class="action-btn btn-del" (click)="delete(row)">
+              <mat-icon style="font-size:14px; height:14px; width:14px">delete</mat-icon> Delete
+            </button>
+          </ng-container>
+        </div>
       </td>
     </ng-container>
+
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
-  <p *ngIf="dataSource.data.length === 0" style="text-align:center; padding:32px; color:#999">
+
+  <p *ngIf="dataSource.data.length === 0" style="text-align: center; padding: 40px; color: #999">
     No farmers found.
   </p>
 </mat-card>

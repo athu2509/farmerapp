@@ -8,12 +8,8 @@ def create_user(
     name,
     email,
     password,
-    roles
+    roles=["USER"]
 ):
-    if "SUPER_USER" in roles:
-        existing_super = get_super_user(db)
-        if existing_super:
-            return None
 
     user = User(
         name=name,
